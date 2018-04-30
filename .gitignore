@@ -1,0 +1,6 @@
+.idea/
+rupunktor/__pycache__
+.ipynb_checkpoints/
+ml3/
+models/
+weights/
