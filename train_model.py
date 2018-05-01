@@ -15,10 +15,14 @@ import rupunktor.model_zoo as models
 
 
 def _create_model():
-    return models.cut_emb_bgru(hidden_units=128, words_vocabulary_size=50002)
+    return models.cut_augmented_gru(
+        hidden_units=128,
+        words_vocabulary_size=50002,
+        tags_vocabulary_size=702
+    )
 
 
-DATA_DIR = './runews_data/'
+DATA_DIR = './news_data/'
 
 MODELS_DIR = './models/'
 CHECKPOINTS_DIR = './weights/'
@@ -70,7 +74,7 @@ def main(args):
         monitor='val_categorical_accuracy', save_weights_only=True, period=1, mode='max',
     )
     opts = dict(batch_size=128, epochs=40, verbose=1, validation_split=0.2, callbacks=[checkpoint])
-    if x2_all:
+    if x2_all is not None:
         model.fit([x1_all, x2_all], y_all, **opts)
     else:
         model.fit(x1_all, y_all, **opts)
@@ -79,7 +83,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', metavar='DIR', default='./runews_data')
+    parser.add_argument('--data_dir', metavar='DIR', default=DATA_DIR)
     parser.add_argument('--model', metavar='PATH', help='Load pretrained model from file specified')
     parser.add_argument('--weight', metavar='PATH', help='Load pretrained model weights')
     parser.add_argument('--no_embedding', action='store_true')

@@ -84,3 +84,25 @@ def augmented_gru(hidden_units, words_vocabulary_size, tags_vocabulary_size):
     m.summary()
     m.name = 'augmented_gru_{}'.format(hidden_units)
     return m
+
+
+def cut_augmented_gru(hidden_units, words_vocabulary_size, tags_vocabulary_size):
+    input1 = Input(shape=(None,), name='word_input')
+    input2 = Input(shape=(None,), name='pos_tags_input')
+
+    emb1 = Embedding(words_vocabulary_size, 64, name='word_index_embedding')(input1)
+    emb2 = Embedding(tags_vocabulary_size, 64, name='pos_tags_embedding')(input2)
+
+    x = concatenate([emb1, emb2])
+
+    rnn = Bidirectional(GRU(hidden_units, name='gru_layer', return_sequences=True))(x)
+    dense2 = Dense(NUM_CLASSES, activation='softmax', name='output_tags')(rnn)
+
+    # Manually drop last timestamp, because we don't care about anything after end of sentence
+    nullf = Lambda(lambda x: x[:,:-1,:])(dense2)
+
+    m = Model(inputs=[input1, input2], outputs=[nullf])
+    m.summary()
+    m.name = 'cut_augmented_gru_{}'.format(hidden_units)
+
+    return m
