@@ -9,11 +9,15 @@ from keras.utils import to_categorical
 
 import rupunktor.model_zoo as models
 
-N_HIDDEN = 128
-VOCABULARY_SIZE = 50002
-TAGS_SPACE_SIZE = 18
+# N_HIDDEN = 128
+# VOCABULARY_SIZE = 50002
+# TAGS_SPACE_SIZE = 18
 
-MODEL_FN = models.augmented_gru
+
+def _create_model():
+    return models.cut_emb_bgru(hidden_units=128, words_vocabulary_size=50002)
+
+
 DATA_DIR = './runews_data/'
 
 MODELS_DIR = './models/'
@@ -34,6 +38,8 @@ def main(args):
     xy_all = np.load(data_file)
     x1_all = xy_all[:, 0, :]
     y_all = to_categorical(xy_all[:, 1, :])
+    # Drop last y mark, because we cannot predict signs after </s> tag
+    y_all = y_all[:, :-1, :]
 
     x2_all = None
     if os.path.isfile(tags_file) and args.use_tags:
@@ -48,9 +54,7 @@ def main(args):
         model = load_model(args.model)
         model.name = os.path.splitext(args.model)[0]
     else:
-        model = MODEL_FN(hidden_units=N_HIDDEN,
-                         words_vocabulary_size=VOCABULARY_SIZE,
-                         tags_vocabulary_size=TAGS_SPACE_SIZE)
+        model = _create_model()
         model.compile(**COMPILE_OPTS)
 
     if args.weight:

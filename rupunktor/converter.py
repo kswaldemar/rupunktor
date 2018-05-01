@@ -11,11 +11,13 @@ class Tag:
 
     NUM = '<num>'
     UNK = '<unknown>'
+    ENG = '<eng>'
     EOS = '</s>'
 
 
 PUNKT_TAGS = [Tag.SPACE, Tag.COMMA, Tag.PERIOD]
 EOS_TAGS = [Tag.PERIOD]
+CRAP_TOKENS = {'%$#@&^*`~'}
 
 
 def is_tag(token):
@@ -26,7 +28,8 @@ class Converter:
     def __init__(self):
         self.punkt_to_tag = {',': Tag.COMMA, '.': Tag.PERIOD}
         self.tag_to_punkt = {p: d for d, p in self.punkt_to_tag.items()}
-        self.digits_checker = re.compile('\d')
+        self.digits_checker = re.compile('.*\d')
+        self.eng_checker = re.compile('.*[a-zA-Z]')
 
     def readable_tag(self, tag):
         return self.tag_to_punkt[tag]
@@ -36,10 +39,14 @@ class Converter:
         converted = []
         for tok in tokens:
             t = tok.lower()
-            if t in self.punkt_to_tag:
+            if t in CRAP_TOKENS:
+                continue
+            elif t in self.punkt_to_tag:
                 converted.append(self.punkt_to_tag[t])
             elif self.digits_checker.match(t):
                 converted.append(Tag.NUM)
+            elif self.eng_checker.match(t):
+                converted.append(Tag.ENG)
             else:
                 converted.append(tok)
         return converted
@@ -67,10 +74,10 @@ class Converter:
             print(' '.join(ready_line), file=outfile)
 
     @staticmethod
-    def strip_tags(converted_sentence):
+    def strip_punkt_tags(converted_sentence):
         if isinstance(converted_sentence, str):
             converted_sentence = converted_sentence.split()
-        return ' '.join(t for t in converted_sentence if not is_tag(t))
+        return ' '.join(t for t in converted_sentence if t not in PUNKT_TAGS)
 
 
 def convert_to_fixed_len_sentences(preprocessed_sentences, outfile, seq_len=50, norm_info=(0, 1000), log_every=100000):
@@ -95,8 +102,9 @@ def convert_to_fixed_len_sentences(preprocessed_sentences, outfile, seq_len=50, 
                 eos_found = True
 
             if skip_until_eos:
-                # If found eos, skip one more time
+                # If found eos, skip one more time, thus have proper sentence start
                 skip_until_eos = not eos_found
+                eos_found = False
                 continue
 
             if tok in PUNKT_TAGS:
@@ -108,16 +116,20 @@ def convert_to_fixed_len_sentences(preprocessed_sentences, outfile, seq_len=50, 
                 expected_punkt = True
                 words_cnt += 1
 
-            if words_cnt == seq_len + int(expected_punkt):
+            if words_cnt == seq_len + int(expected_punkt) - 1:
                 if eos_found:
                     if expected_punkt:
-                        print(' '.join(acc_toks[:-1]), file=outfile)
+                        print(' '.join(acc_toks[:-1] + [Tag.EOS]), file=outfile)
                     else:
-                        print(' '.join(acc_toks), file=outfile)
-                else:
-                    # Invalid sentence, too long
-                    skip_until_eos = True
-                if expected_punkt:
+                        print(' '.join(acc_toks + [Tag.EOS]), file=outfile)
+
+                # Next sentence should not start from middle
+                skip_until_eos = True
+                if acc_toks[-1] in EOS_TAGS:
+                    # Already reached
+                    skip_until_eos = False
+
+                if expected_punkt and not skip_until_eos:
                     # Last token was word
                     acc_toks = acc_toks[-1:]
                 else:

@@ -7,10 +7,18 @@ from Stemmer import Stemmer
 from rupunktor.converter import Tag, PUNKT_TAGS
 
 
+def _freq_sorter(t):
+    return t[1], t[0]
+
+
 class Corpus:
     def __init__(self):
         self.word_to_idx = {}
         self.idx_to_word = []
+
+    @property
+    def vocab_size(self):
+        return len(self.word_to_idx)
 
     def encode_word(self, word):
         return self.word_to_idx.get(word.lower(), len(self.idx_to_word) - 1)
@@ -29,14 +37,17 @@ class Corpus:
         print('= Built vocabulary with size {}'.format(len(vocab)))
         if vocabulary_size < len(vocab):
             print('= Trim it to {}'.format(vocabulary_size))
-        word_freq = list(map(itemgetter(0), sorted(vocab.items(), key=itemgetter(1), reverse=True)))
+        word_freq = list(map(itemgetter(0), sorted(vocab.items(), key=_freq_sorter, reverse=True)))
         word_freq = word_freq[:vocabulary_size]
         print('Top 10 most frequent words: {}'.format(', '.join(word_freq[:10])))
         print('Top 10 least frequent words: {}'.format(', '.join(word_freq[-10:])))
 
         print('= Building word to index mapping')
         if Tag.NUM not in word_freq:
-            word_freq[-1] = Tag.NUM
+            word_freq[-2] = Tag.NUM
+
+        if Tag.ENG not in word_freq:
+            word_freq[-1] = Tag.ENG
 
         assert Tag.EOS not in word_freq
         word_freq.append(Tag.EOS)
@@ -87,6 +98,7 @@ class StemCorpus(Corpus):
         return self.word_to_idx, self.idx_to_word
 
     def __setstate__(self, state):
+        self.stemmer = Stemmer('russian')
         self.word_to_idx, self.idx_to_word = state
 
     def encode_word(self, word):
@@ -111,7 +123,7 @@ class StemCorpus(Corpus):
         print('= Built vocabulary with size {}'.format(len(vocab)))
         if vocabulary_size < len(vocab):
             print('= Trim it to {}'.format(vocabulary_size))
-        word_freq = list(map(itemgetter(0), sorted(vocab.items(), key=itemgetter(1), reverse=True)))
+        word_freq = list(map(itemgetter(0), sorted(vocab.items(), key=_freq_sorter, reverse=True)))
         word_freq = word_freq[:vocabulary_size]
 
         print('Top 10 most frequent words: {}'.format(', '.join(word_freq[:10])))
@@ -119,7 +131,10 @@ class StemCorpus(Corpus):
 
         print('= Building word to index mapping')
         if Tag.NUM not in word_freq:
-            word_freq[-1] = Tag.NUM
+            word_freq[-2] = Tag.NUM
+
+        if Tag.ENG not in word_freq:
+            word_freq[-1] = Tag.ENG
 
         assert Tag.EOS not in word_freq
         word_freq.append(Tag.EOS)

@@ -8,7 +8,7 @@ from rupunktor import converter, corpus_build
 from rupunktor.pos_tagger import PosTagger
 from rupunktor.utils import pickle_load, pickle_save
 
-CORPUS_TYPE = corpus_build.Corpus
+CORPUS_TYPE = corpus_build.StemCorpus
 
 
 def main(args):

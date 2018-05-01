@@ -1,5 +1,5 @@
 from keras.models import Sequential, Model
-from keras.layers import Dense, LSTM, Bidirectional, GRU, Embedding, Dropout
+from keras.layers import Dense, LSTM, Bidirectional, GRU, Embedding, Dropout, Lambda
 from keras.layers import Input, concatenate
 
 NUM_CLASSES = 3  # Predict [space, comma, period]
@@ -23,13 +23,24 @@ def bgru(hidden_units):
     return m
 
 
-def emb_bgru(hidden_units, vocabulary_size):
+def emb_bgru(hidden_units, words_vocabulary_size):
     m = Sequential()
-    m.add(Embedding(vocabulary_size, hidden_units))
+    m.add(Embedding(words_vocabulary_size, hidden_units))
     m.add(Bidirectional(GRU(hidden_units, return_sequences=True)))
     m.add(Dense(NUM_CLASSES, activation='softmax'))
     m.summary()
     m.name = 'emb_bgru_{}'.format(hidden_units)
+    return m
+
+
+def cut_emb_bgru(hidden_units, words_vocabulary_size):
+    m = Sequential()
+    m.add(Embedding(words_vocabulary_size, hidden_units))
+    m.add(Bidirectional(GRU(hidden_units, return_sequences=True)))
+    m.add(Dense(NUM_CLASSES, activation='softmax'))
+    m.add(Lambda(lambda x: x[:, :-1, :]))
+    m.summary()
+    m.name = 'cut_emb_bgru_{}'.format(hidden_units)
     return m
 
 
