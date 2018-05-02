@@ -61,7 +61,7 @@ def main(args):
         model = _create_model()
         model.compile(**COMPILE_OPTS)
 
-    if args.weight:
+    if args.weights:
         print('Use weights from file {}'.format(args.weights))
         model.load_weights(args.weights)
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', metavar='DIR', default=DATA_DIR)
     parser.add_argument('--model', metavar='PATH', help='Load pretrained model from file specified')
-    parser.add_argument('--weight', metavar='PATH', help='Load pretrained model weights')
+    parser.add_argument('--weights', metavar='PATH', help='Load pretrained model weights')
     parser.add_argument('--no_embedding', action='store_true')
     parser.add_argument('--use_tags', action='store_true', help='Use morphological tags file morph_tags.npy')
     parser.add_argument('--data_file', metavar='NAME', default='data.npy')

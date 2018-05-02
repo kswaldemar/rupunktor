@@ -17,7 +17,7 @@ class Tag:
 
 PUNKT_TAGS = [Tag.SPACE, Tag.COMMA, Tag.PERIOD]
 EOS_TAGS = [Tag.PERIOD]
-CRAP_TOKENS = {'%$#@&^*`~'}
+CRAP_TOKENS = set('%$#@&^*`~"\':;()')
 
 
 def is_tag(token):
@@ -34,8 +34,10 @@ class Converter:
     def readable_tag(self, tag):
         return self.tag_to_punkt[tag]
 
-    def convert_sentence(self, sentence):
-        tokens = word_tokenize(sentence)
+    def tokenize_sentence(self, sentence):
+        return word_tokenize(sentence)
+
+    def process_tokens(self, tokens):
         converted = []
         for tok in tokens:
             t = tok.lower()
@@ -59,7 +61,7 @@ class Converter:
         ready_line = []
         converted_cnt = 0
         for i, line in enumerate(file, 1):
-            converted_line = self.convert_sentence(line)
+            converted_line = self.process_tokens(self.tokenize_sentence(line))
             for tok in converted_line:
                 ready_line.append(tok)
                 if tok in EOS_TAGS:
